@@ -1,0 +1,724 @@
+Spring6 学习笔记:
+
+1\环境要求:
+    jdk17
+2\引入依赖
+        <dependencies>
+            <!--spring context依赖-->
+            <!--当你引入Spring Context依赖之后，表示将Spring的基础依赖引入了-->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>6.0.2</version>
+            </dependency>
+
+            <!--junit5测试-->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>5.3.1</version>
+            </dependency>
+        </dependencies>
+3\ resource 目录下创建配置文件   bean.xml
+    // 配置Bean
+    <bean id = "user" class = "com.atguigu.spring.bean.User"></bean>
+4\ 引入 logo4j2 日志: 创建log4j2.xml 配置文件
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration>
+            <loggers>
+                <!--
+                    level指定日志级别，从低到高的优先级：
+                        TRACE < DEBUG < INFO < WARN < ERROR < FATAL
+                        trace：追踪，是最低的日志级别，相当于追踪程序的执行
+                        debug：调试，一般在开发中，都将其设置为最低的日志级别
+                        info：信息，输出重要的信息，使用较多
+                        warn：警告，输出警告的信息
+                        error：错误，输出错误信息
+                        fatal：严重错误
+                -->
+                <root level="DEBUG">
+                    <appender-ref ref="spring6log"/>
+                    <appender-ref ref="RollingFile"/>
+                    <appender-ref ref="log"/>
+                </root>
+            </loggers>
+
+            <appenders>
+                <!--输出日志信息到控制台-->
+                <console name="spring6log" target="SYSTEM_OUT">
+                    <!--控制日志输出的格式-->
+                    <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss SSS} [%t] %-3level %logger{1024} - %msg%n"/>
+                </console>
+
+                <!--文件会打印出所有信息，这个log每次运行程序会自动清空，由append属性决定，适合临时测试用-->
+                <File name="log" fileName="d:/spring6_log/test.log" append="false">
+                    <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n"/>
+                </File>
+
+                <!-- 这个会打印出所有的信息，
+                    每次大小超过size，
+                    则这size大小的日志会自动存入按年份-月份建立的文件夹下面并进行压缩，
+                    作为存档-->
+                <RollingFile name="RollingFile" fileName="d:/spring6_log/app.log"
+                             filePattern="log/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+                    <PatternLayout pattern="%d{yyyy-MM-dd 'at' HH:mm:ss z} %-5level %class{36} %L %M - %msg%xEx%n"/>
+                    <SizeBasedTriggeringPolicy size="50MB"/>
+                    <!-- DefaultRolloverStrategy属性如不设置，
+                    则默认为最多同一文件夹下7个文件，这里设置了20 -->
+                    <DefaultRolloverStrategy max="20"/>
+                </RollingFile>
+            </appenders>
+        </configuration>
+5\ IOC容器
+    5.1 控制反转 IOC(inversion of control)
+        5.1.1  依赖注入 DI(dependence Injection)
+            set   注入:
+            构造器 注入:
+
+        5.2 获取bean
+        //创建IOC容器对象
+            ApplicationContext context = new ClassPathXmlApplicationContext("bean.xml");
+        //获取spring bean
+            context.getBean()
+            方式一: 根据ID获取
+                context.getBean("user");
+            方式二: 根据类型获取  注意:当根据类型获取bean时，要求IOC容器中指定类型的bean有且只能有一个
+                context.getBean(User.class);
+            方式三: 根据ID和类型
+                context.getBean("user",User.class);
+        5.3 依赖注入之 setter注入  (bean对象中必须实现对应的 set方法)
+                <bean id = "user" class = "com.atguigu.spring.bean.User">
+                    <property name='uname' value="Tom"></property>
+                    <property name='uage' value="20"></property>
+                </bean>
+        5.4 依赖注入之 构造器注入   (bean 对象中必须实现空参构造器)
+                 <bean id = "user" class = "com.atguigu.spring.bean.User">
+                     <constructor-avg value=""></constructor>
+                     <constructor-avg value=""></constructor>
+                     <constructor-avg value=""></constructor>
+                 </bean>
+        5.5 依赖注入  特殊值处理
+            ①字面量赋值    <property name='uname' value="Tom"></property>
+            ②null值
+                <property name="name">
+                    <null />
+                </property>
+            ③xml实体   (<>用 &lt; &gt; 表示)
+                <property name="expression" value="a &lt; b"/>
+            ④CDATA节
+                <property name="expression">
+                    <!-- 解决方案二：使用CDATA节 -->
+                    <!-- CDATA中的C代表Character，是文本、字符的含义，CDATA就表示纯文本数据 -->
+                    <!-- XML解析器看到CDATA节就知道这里是纯文本，就不会当作XML标签或属性来解析 -->
+                    <!-- 所以CDATA节中写什么符号都随意 -->
+                    <value><![CDATA[<>]]></value>
+                </property>
+            5.5 依赖注入  为对象属性赋值
+              三种方式:
+                 方式一: 引用外部bean
+                        <bean id="dept" class="com.atguigu.spring.bean.Department" ></bean>
+                        <bean id="user" class="com.atguigu.spring.bean.User" >
+                            <property name="uname" value="Tim"></property>
+                            <property name="age" value="20"></property>
+                            <property name="department" ref="dept"></property>
+                        </bean>
+                 方式二: 内部bean
+
+                         <bean id="user" class="com.atguigu.spring.bean.User" >
+                             <property name="uname" value="Tim"></property>
+                             <property name="age" value="20"></property>
+                             <property name="department">
+                                    <bean id="dept" class="com.atguigu.spring.bean.Department" ></bean>
+                             </property>
+                         </bean>
+                 方式三: 级联级属性赋值
+                           <bean id="dept" class="com.atguigu.spring.bean.Department" ></bean>
+                           <bean id="user" class="com.atguigu.spring.bean.User" >
+                               <property name="uname" value="Tim"></property>
+                               <property name="age" value="20"></property>
+                               <property name="dept" ref="dept"></property>
+                               <property name="dept.departmentId" value="100"></property>
+                               <property name="dept.departmentName" value="100"></property>
+                           </bean>
+              5.6 为数组类型属性赋值
+                <property name="hobby">
+                    <array>
+                        <value>篮球</value>
+                        <value>读书</value>
+                    </array>
+                </property>
+              5.7 为集合类型属性赋值
+                5.7.1 List属性赋值
+                    <property name="studentList" >
+                        <list>
+                            <ref bean="studentOne"></ref>
+                            <ref bean="studentTwo"></ref>
+                             <ref bean="studentThree"></ref>
+                        </list>
+                    </property>
+                5.7.2 Map属性赋值
+                    <property name="teacherMap">
+                            <map>
+                                <entry>
+                                    <key>
+                                        <value>10010</value>
+                                    </key>
+                                    <ref bean="teacherOne"></ref>
+                                </entry>
+                                <entry>
+                                    <key>
+                                        <value>10086</value>
+                                    </key>
+                                    <ref bean="teacherTwo"></ref>
+                                </entry>
+                            </map>
+                        </property>
+                5.7.3 引用集合类型的bean
+                            <!--list集合类型的bean-->
+                            <util:list id="students">
+                                <ref bean="studentOne"></ref>
+                                <ref bean="studentTwo"></ref>
+                                <ref bean="studentThree"></ref>
+                            </util:list>
+                            <!--map集合类型的bean-->
+                            <util:map id="teacherMap">
+                                <entry>
+                                    <key>
+                                        <value>10010</value>
+                                    </key>
+                                    <ref bean="teacherOne"></ref>
+                                </entry>
+                                <entry>
+                                    <key>
+                                        <value>10086</value>
+                                    </key>
+                                    <ref bean="teacherTwo"></ref>
+                                </entry>
+                            </util:map>
+              5.8 P命名空间
+                    xmlns:p="http://www.springframework.org/schema/p"
+                    <bean id="stu3" class="com.atguigu.spring.bean.Student" p:id="100099" p:age="22" p:name="小白鼠" p:teacherMap-ref="teacherMap"></bean>
+              5.9 引入外部属性文件
+                5.9.1 引入依赖
+                     <!-- MySQL驱动 -->
+                    <dependency>
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>8.0.30</version>
+                    </dependency>
+
+                    <!-- 数据源 -->
+                    <dependency>
+                        <groupId>com.alibaba</groupId>
+                        <artifactId>druid</artifactId>
+                        <version>1.2.15</version>
+                    </dependency>
+                5.9.2 创建外部属性文件 jdbc.properties
+                        jdbc.user=root
+                        jdbc.password=atguigu
+                        jdbc.url=jdbc:mysql://localhost:3306/ssm?serverTimezone=UTC
+                        jdbc.driver=com.mysql.cj.jdbc.Driver
+                5.9.3 引入属性文件
+                        xmlns:context="http://www.springframework.org/schema/context"
+
+                        <!-- 引入外部属性文件 -->
+                        <context:property-placeholder location="classpath:jdbc.properties"/>
+
+                        配置bean
+                        <bean id="druidDataSource" class="com.alibaba.druid.pool.DruidDataSource">
+                            <property name="url" value="${jdbc.url}"/>
+                            <property name="driverClassName" value="${jdbc.driver}"/>
+                            <property name="username" value="${jdbc.user}"/>
+                            <property name="password" value="${jdbc.password}"/>
+                        </bean>
+              5.10 bean的作用域 scope
+                    单实例
+                            <bean id="user" class="com.atguigu.spring.scope.User" scope="singleton"></bean>
+                    多实例
+                            <bean id="user1" class="com.atguigu.spring.scope.User" scope="prototype"></bean>
+              5.11 bean的生命周期
+                    - bean对象创建（调用无参构造器）
+
+                    - 给bean对象设置属性
+
+                    - bean的后置处理器（初始化之前）
+                           public class MyBean implements BeanPostProcessor
+                                @Override
+                                public Object postProcessBeforeInitialization(Object bean, String beanName)
+                    - bean对象初始化（需在配置bean时指定初始化方法）
+
+                    - bean的后置处理器（初始化之后）
+                             @Override
+                             public Object postProcessAfterInitialization(Object bean, String beanName)
+                    - bean对象就绪可以使用
+
+                    - bean对象销毁（需在配置bean时指定销毁方法）
+
+                    - IOC容器关闭
+              5.12 factoryBean
+                           public class MyFactoryBean implements FactoryBean<User> {
+                               @Override
+                               public User getObject() throws Exception {
+                                   return new User();
+                               }
+
+                               @Override
+                               public Class<?> getObjectType() {
+                                   return User.class;
+                               }
+              5.13 基于XML自动装配
+                    自动装配方式：byType    autowire="byType"
+                    byType：根据类型匹配IOC容器中的某个兼容类型的bean，为属性自动赋值
+
+                    自动装配方式：byName    autowire="byName"
+                    byName：将自动装配的属性的属性名，作为bean的id在IOC容器中匹配相对应的bean进行赋值
+6\ 基于注解管理bean
+    6.1 开启组件扫描
+        <context:component-scan base-package="com.atguigu.spring6"></context:component-scan>
+    6.2 使用注解定义 Bean
+        | @Component  | 该注解用于描述 Spring 中的 Bean，它是一个泛化的概念，仅仅表示容器中的一个组件（Bean），并且可以作用在应用的任何层次，例如 Service 层、Dao 层等。  使用时只需将该注解标注在相应类上即可。 |
+        | ----------- | ------------------------------------------------------------ |
+        | @Repository | 该注解用于将数据访问层（Dao 层）的类标识为 Spring 中的 Bean，其功能与 @Component 相同。 |
+        | @Service    | 该注解通常作用在业务层（Service 层），用于将业务层的类标识为 Spring 中的 Bean，其功能与 @Component 相同。 |
+        | @Controller | 该注解通常作用在控制层（如SpringMVC 的 Controller），用于将控制层的类标识为 Spring 中的 Bean，其功能与 @Component 相同。 |
+    6.3 实验一：@Autowired注入    单独使用@Autowired注解，**默认根据类型装配**。【默认是byType】
+
+         **总结**
+         - @Autowired注解可以出现在：属性上、构造方法上、构造方法的参数上、setter方法上。
+         - 当带参数的构造方法只有一个，@Autowired注解可以省略。（）
+         - @Autowired注解默认根据类型注入。如果要根据名称注入的话，需要配合@Qualifier注解一起使用。
+
+            ①场景一：属性注入    可以省略属性的set方法
+            ②场景二：set注入
+            ③场景三：构造方法注入
+            ④场景四：形参上注入
+            ⑤场景五：只有一个构造函数，无注解     当有参数的构造方法只有一个时，@Autowired注解可以省略。**
+
+    6.4 实验二：@Resource注入
+
+            - **@Resource注解默认根据名称装配byName，未指定name时，使用属性名作为name。通过name找不到的话会自动启动通过类型byType装配。**
+            - **@Autowired注解默认根据类型装配byType，如果想根据名称装配，需要配合@Qualifier注解一起用。**
+            - @Resource注解用在属性上、setter方法上。
+            - @Autowired注解用在属性上、setter方法上、构造方法上、构造方法参数上。
+
+    6.5 Spring全注解开发
+            @Configuration
+            @ComponentScan("com.atguigu.spring6")
+            public class Spring6Config {
+            }
+
+             ApplicationContext context = new AnnotationConfigApplicationContext(Spring6Config.class);
+                UserController userController = context.getBean("userController", UserController.class);
+
+7\ 手写IOC
+    7.1 获取Class对象的三种方式
+        1. 类名.class
+        2. 对象.getClass()
+        3. Class clazz = Class.forName("类的全路径")
+    7.2 反射的基本方法
+        1.类的实例化
+            clazz.getConstructor().newInstance();
+        2.获取所有构造方法
+            Constructor[] constructors = clazz.getDeclaredConstructors()
+            指定有参构造方法
+            Constructor constructor = clazz.getConstructor(String.class, int.class, String.class);
+        3.获取所有方法
+            Method[] methods = clazz.getDeclaredMethods();
+        4.获取所有属性
+            Field[] fields = clazz.getDeclaredFields();
+
+            private 修饰词要获得访问权限
+            XXX.setAccessible(true);
+            方法调用
+            M.invoke(对象,参数)
+    7.3 手写 IOC
+                1/自定义注解   类注解  属性注解
+                2/类和属性标识注解
+                3/编写获取类的bean容器
+                    定义获取bean的方法  getBean()
+                    定义存放bean的Map集合  private HashMap<Class, Object> beanFactory = new HashMap<>();
+                    根据传入的报名获取 类路径,扫描加载bean
+                    依赖注入把实例化的bean 存入 Map中
+                        如果bean有接口,则把接口存入Map中的key bean存为 value中
+                        如果bean没有有接口,则bean的class存入Map中的key bean存为 value中
+
+        1.自定义注解
+            bean注解
+
+            @Target(ElementType.TYPE)
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Bean {
+            }
+
+            依赖注入注解
+            @Target({ElementType.FIELD})
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface Di {
+            }
+
+        2.定义bean容器  ApplicationContext
+            public interface ApplicationContext {
+                Object getBean(Class clazz);
+            }
+        3.编写注解bean容器接口实现**   AnnotationApplicationContext基于注解扫描bean
+            public class AnnotationApplicationContext implements ApplicationContext {
+                //存储bean的容器
+                private HashMap<Class, Object> beanFactory = new HashMap<>();
+                @Override
+                public Object getBean(Class clazz) {
+                    return beanFactory.get(clazz);
+                }
+                /**
+                 * 根据包扫描加载bean
+                 * @param basePackage
+                 */
+                public AnnotationApplicationContext(String basePackage) {
+
+                }
+            }
+
+8\ 面向切片 AOP
+        8.1 概念（Aspect Oriented Programming）
+                AOP（Aspect Oriented Programming）是一种设计思想，是软件设计领域中的面向切面编程，它是面向对象编程的一种补充和完善，
+                它以通过预编译方式和运行期动态代理方式实现，在不修改源代码的情况下，给程序动态统一添加额外功能的一种技术。
+                利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率。
+        8.2 相关术语
+            1\ 横切关注点  分散在每个各个模块中解决同一样的问题
+            2\ 通知（增强）
+                **增强，通俗说，就是你想要增强的功能，比如 安全，事务，日志等。**
+                每一个横切关注点上要做的事情都需要写一个方法来实现，这样的方法就叫通知方法。
+                - 前置通知：在被代理的目标方法**前**执行
+                - 返回通知：在被代理的目标方法**成功结束**后执行（**寿终正寝**）
+                - 异常通知：在被代理的目标方法**异常结束**后执行（**死于非命**）
+                - 后置通知：在被代理的目标方法**最终结束**后执行（**盖棺定论**）
+                - 环绕通知：使用try...catch...finally结构围绕**整个**被代理的目标方法，包括上面四种通知对应的所有位置
+            3\ 切面 封装通知方法的类。
+            4\ 目标 被代理的目标对象。
+            5\ 代理 向目标对象应用通知之后创建的代理对象。
+            6\ 连接点
+                 把方法排成一排，每一个横切位置看成x轴方向，把方法从上到下执行的顺序看成y轴，x轴和y轴的交叉点就是连接点。
+                 通俗说，就是spring允许你使用通知的地方**
+            7\ 切入点 定位连接点的方式。
+                每个类的方法中都包含多个连接点，所以连接点是类中客观存在的事物（从逻辑上来说）。
+                如果把连接点看作数据库中的记录，那么切入点就是查询记录的 SQL 语句。
+                **Spring 的 AOP 技术可以通过切入点定位到特定的连接点。通俗说，要实际去增强的方法**
+                切点通过 org.springframework.aop.Pointcut 接口进行描述，它使用类和方法作为连接点的查询条件。
+        8.3 作用
+                - 简化代码：把方法中固定位置的重复的代码**抽取**出来，让被抽取的方法更专注于自己的核心功能，提高内聚性。
+                - 代码增强：把特定的功能封装到切面类中，看哪里有需要，就往上套，被**套用**了切面逻辑的方法就被切面给增强了。
+
+        8.4 基于注解的AOP
+            - 动态代理分为JDK动态代理和cglib动态代理
+            - 当目标类有接口的情况使用JDK动态代理和cglib动态代理，没有接口时只能使用cglib动态代理
+
+                        代码实践
+                        1- POM文件添加依赖
+                             <!--spring aop依赖-->
+                                <dependency>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-aop</artifactId>
+                                    <version>6.0.2</version>
+                                </dependency>
+                                <!--spring aspects依赖-->
+                                <dependency>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring-aspects</artifactId>
+                                    <version>6.0.2</version>
+                                </dependency>
+                        2- 准备被代理的目标资源
+                            interface 接口
+                            implements  接口实现类(具体的业务规则类)
+                        3- 创建切面类并配置
+                            // @Aspect表示这个类是一个切面类
+                            @Aspect
+                            // @Component注解保证这个切面类能够放入IOC容器
+                            @Component
+                            public class LogAspect { ...... }
+
+                        4- spring 配置文件中配置
+                            <?xml version="1.0" encoding="UTF-8"?>
+                            <beans xmlns="http://www.springframework.org/schema/beans"
+                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                   xmlns:context="http://www.springframework.org/schema/context"
+                                   xmlns:aop="http://www.springframework.org/schema/aop"
+                                   xsi:schemaLocation="http://www.springframework.org/schema/beans
+                                   http://www.springframework.org/schema/beans/spring-beans.xsd
+                                   http://www.springframework.org/schema/context
+                                   http://www.springframework.org/schema/context/spring-context.xsd
+                                   http://www.springframework.org/schema/aop
+                                   http://www.springframework.org/schema/aop/spring-aop.xsd">
+                                <!--
+                                    基于注解的AOP的实现：
+                                    1、将目标对象和切面交给IOC容器管理（注解+扫描）
+                                    2、开启AspectJ的自动代理，为目标对象自动生成代理
+                                    3、将切面类通过注解@Aspect标识
+                                -->
+                                <context:component-scan base-package="com.atguigu.aop.annotation"></context:component-scan>
+                                <aop:aspectj-autoproxy />
+                            </beans>
+
+
+                            各种通知
+                            - 前置通知：使用@Before注解标识，在被代理的目标方法**前**执行
+                            - 返回通知：使用@AfterReturning注解标识，在被代理的目标方法**成功结束**后执行（**寿终正寝**）
+                            - 异常通知：使用@AfterThrowing注解标识，在被代理的目标方法**异常结束**后执行（**死于非命**）
+                            - 后置通知：使用@After注解标识，在被代理的目标方法**最终结束**后执行（**盖棺定论**）
+                            - 环绕通知：使用@Around注解标识，使用try...catch...finally结构围绕**整个**被代理的目标方法，包括上面四种通知对应的所有位置
+
+                            语法细节
+                            - 用*号代替“权限修饰符”和“返回值”部分表示“权限修饰符”和“返回值”不限
+                            - 在包名的部分，一个“*”号只能代表包的层次结构中的一层，表示这一层是任意的。
+                              - 例如：*.Hello匹配com.Hello，不匹配com.atguigu.Hello
+                            - 在包名的部分，使用“*..”表示包名任意、包的层次深度任意
+                            - 在类名的部分，类名部分整体用*号代替，表示类名任意
+                            - 在类名的部分，可以使用*号代替类名的一部分
+                              - 例如：*Service匹配所有名称以Service结尾的类或接口
+
+                            - 在方法名部分，可以使用*号表示方法名任意
+                            - 在方法名部分，可以使用*号代替方法名的一部分
+                              - 例如：*Operation匹配所有方法名以Operation结尾的方法
+
+                            - 在方法参数列表部分，使用(..)表示参数列表任意
+                            - 在方法参数列表部分，使用(int,..)表示参数列表以一个int类型的参数开头
+                            - 在方法参数列表部分，基本数据类型和对应的包装类型是不一样的
+                              - 切入点表达式中使用 int 和实际方法中 Integer 是不匹配的
+                            - 在方法返回值部分，如果想要明确指定一个返回值类型，那么必须同时写明权限修饰符
+                              - 例如：execution(public int *..*Service.*(.., int))	正确
+                                例如：execution(* int *..*Service.*(.., int))	错误
+
+                            重用切入点表达式
+                              @Pointcut(value = "execution(* com.atguigu.spring6.annotionaop.Calculator.*(..))")
+                              public void pointcut(){}
+
+                              切面中引用:
+                              同个切面:  @After("pointcut()")
+                              不同切面   @After("com.atguigu.spring6.annotionaop.logAspect.pointcut()")
+        8.5 基于XML的AOP
+            创建切面类  实现通知方法
+            配置XML文件
+
+            <context:component-scan base-package="com.atguigu.spring6.xmlaop"></context:component-scan>
+                <aop:config>
+                    <aop:aspect ref="logAspect">
+                        <aop:pointcut id="pointcut" expression="execution(* com.atguigu.spring6.xmlaop.CalculatorImpl.*(..))"/>
+                        <aop:before method="beforeMethod" pointcut-ref="pointcut"></aop:before>
+                        <aop:after method="afterMethod" pointcut-ref="pointcut"></aop:after>
+                        <aop:after-returning method="afterReturnMethod" returning="result" pointcut-ref="pointcut"></aop:after-returning>
+                        <aop:after-throwing method="afterThrowMethod" throwing="ex" pointcut-ref="pointcut"></aop:after-throwing>
+                        <aop:around method="aroundMethod" pointcut-ref="pointcut"></aop:around>
+                    </aop:aspect>
+                </aop:config>
+9\ 事务
+        9.1 环境准备
+            1/ 引入依赖
+                    <dependencies>
+                        <!--spring jdbc  Spring 持久化层支持jar包-->
+                        <dependency>
+                            <groupId>org.springframework</groupId>
+                            <artifactId>spring-jdbc</artifactId>
+                            <version>6.0.2</version>
+                        </dependency>
+                        <!-- MySQL驱动 -->
+                        <dependency>
+                            <groupId>mysql</groupId>
+                            <artifactId>mysql-connector-java</artifactId>
+                            <version>8.0.30</version>
+                        </dependency>
+                        <!-- 数据源 -->
+                        <dependency>
+                            <groupId>com.alibaba</groupId>
+                            <artifactId>druid</artifactId>
+                            <version>1.2.15</version>
+                        </dependency>
+                    </dependencies>
+            2/ 创建 jdbc.properties 配置文件
+                    jdbc.user=root
+                    jdbc.password=root
+                    jdbc.url=jdbc:mysql://localhost:3306/spring?characterEncoding=utf8&useSSL=false
+                    jdbc.driver=com.mysql.cj.jdbc.Driver
+            3/ 配置bean.xml 文件
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <beans xmlns="http://www.springframework.org/schema/beans"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xmlns:context="http://www.springframework.org/schema/context"
+                           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+                        <!-- 导入外部属性文件 -->
+                        <context:property-placeholder location="classpath:jdbc.properties" />
+
+                        <!-- 配置数据源 -->
+                        <bean id="druidDataSource" class="com.alibaba.druid.pool.DruidDataSource">
+                            <property name="url" value="${jdbc.url}"/>
+                            <property name="driverClassName" value="${jdbc.driver}"/>
+                            <property name="username" value="${jdbc.user}"/>
+                            <property name="password" value="${jdbc.password}"/>
+                        </bean>
+
+                        <!-- 配置 JdbcTemplate -->
+                        <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+                            <!-- 装配数据源 -->
+                            <property name="dataSource" ref="druidDataSource"/>
+                        </bean>
+                    </beans>
+            4/ Junit 测试
+                        @SpringJUnitConfig(locations = "classpath:beans.xml")
+                        public class JDBCTemplateTest {
+                            @Autowired
+                            private JdbcTemplate jdbcTemplate;
+                        }
+
+                        测试增删改
+                        jdbcTemplate.update(String sql,Object...args)
+                        测试查询单个对象
+                        jdbcTemplate.queryForObject(sql,new BeanPropertyRowMapper<>(Emp.class));
+                        测试查询List对象
+                        jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Emp.class));
+                        查询返回单个值
+                        jdbcTemplate,query(sql,Integer.class)
+        9.2 声明式事务概念
+            事务的特性 ACID
+                1\ 原子性 Atomicity  一个事务(transaction)中的所有操作，要么全部完成，要么全部不完成，不会结束在中间某个环节
+                2\ 一直性 Consistency  事务的一致性指的是在一个事务执行之前和执行之后数据库都必须处于一致性状态。
+                3\ 隔离性 Isolation  指的是在并发环境中，当不同的事务同时操纵相同的数据时，每个事务都有各自的完整数据空间
+                4\ 持久性 Durability  指的是只要事务成功结束，它对数据库所做的更新就必须保存下来
+        9.3 基于注解的声明式事务
+            1/ 添加配置 开启自动扫描
+                <context:component-scan base-package="com.atguigu.spring6"></context:component-scan>
+            2/ 添加事务配置
+                <?xml version="1.0" encoding="UTF-8"?>
+                <beans xmlns="http://www.springframework.org/schema/beans"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xmlns:context="http://www.springframework.org/schema/context"
+                       xmlns:tx="http://www.springframework.org/schema/tx"
+                       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                       http://www.springframework.org/schema/beans/spring-beans.xsd
+                       http://www.springframework.org/schema/context
+                       http://www.springframework.org/schema/context/spring-context.xsd
+                       http://www.springframework.org/schema/tx
+                       http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+                       <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+                           <property name="dataSource" ref="druidDataSource"></property>
+                       </bean>
+
+                       <!--
+                           开启事务的注解驱动
+                           通过注解@Transactional所标识的方法或标识的类中所有的方法，都会被事务管理器管理事务
+                       -->
+                       <!-- transaction-manager属性的默认值是transactionManager，如果事务管理器bean的id正好就是这个默认值，则可以省略这个属性 -->
+                       <tx:annotation-driven transaction-manager="transactionManager" />
+            3/ 添加事务注解
+                @Transactional
+                    @Transactional标识在方法上，则只会影响该方法
+                    @Transactional标识的类上，则会影响类中所有的方法
+            4/ 事务属性
+                只读
+                    @Transactional(readOnly = true)
+                超时
+                    @Transactional(timeout = 3)
+                回滚策略
+                    @Transactional(noRollbackFor = ArithmeticException.class)
+                    - rollbackFor属性：需要设置一个Class类型的对象
+                    - rollbackForClassName属性：需要设置一个字符串类型的全类名
+                    - noRollbackFor属性：需要设置一个Class类型的对象
+                    - rollbackFor属性：需要设置一个字符串类型的全类名
+                隔离级别
+                    @Transactional(isolation = Isolation.DEFAULT)//使用数据库默认的隔离级别
+                    @Transactional(isolation = Isolation.READ_UNCOMMITTED)//读未提交
+                    @Transactional(isolation = Isolation.READ_COMMITTED)//读已提交
+                    @Transactional(isolation = Isolation.REPEATABLE_READ)//可重复读
+                    @Transactional(isolation = Isolation.SERIALIZABLE)//串行化
+
+                    | 隔离级别          | 脏读 | 不可重复读 | 幻读 |
+                    | ---------------- | ---- | ---------- | ---- |
+                    | READ UNCOMMITTED | 有   | 有         | 有   |
+                    | READ COMMITTED   | 无   | 有         | 有   |
+                    | REPEATABLE READ  | 无   | 无         | 有   |
+                    | SERIALIZABLE     | 无   | 无         | 无   |
+                传播属性
+                     @Transactional(propagation = Propagation.REQUIRED)
+                    一共有七种传播行为：
+                    - REQUIRED：支持当前事务，如果不存在就新建一个(默认)**【没有就新建，有就加入】**
+                    - SUPPORTS：支持当前事务，如果当前没有事务，就以非事务方式执行**【有就加入，没有就不管了】**
+                    - MANDATORY：必须运行在一个事务中，如果当前没有事务正在发生，将抛出一个异常**【有就加入，没有就抛异常】**
+                    - REQUIRES_NEW：开启一个新的事务，如果一个事务已经存在，则将这个存在的事务挂起**【不管有没有，直接开启一个新事务，开启的新事务和之前的事务不存在嵌套关系，之前事务被挂起】**
+                    - NOT_SUPPORTED：以非事务方式运行，如果有事务存在，挂起当前事务**【不支持事务，存在就挂起】**
+                    - NEVER：以非事务方式运行，如果有事务存在，抛出异常**【不支持事务，存在就抛异常】**
+                    - NESTED：如果当前正有一个事务在进行中，则该方法应当运行在一个嵌套式事务中。被嵌套的事务可以独立于外层事务进行提交或回滚。如果外层事务不存在，行为就像REQUIRED一样。**【有事务的话，就在这个事务里再嵌套一个完全独立的事务，嵌套的事务可以独立的提交和回滚。没有事务就和REQUIRED一样。】**
+            5/ 全注解配置事务
+                    添加配置类
+                        @Configuration
+                        @ComponentScan("com.atguigu.spring6")
+                        @EnableTransactionManagement
+                        public class SpringConfig {
+
+                            @Bean
+                            public DataSource getDataSource(){
+                                DruidDataSource dataSource = new DruidDataSource();
+                                dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+                                dataSource.setUrl("jdbc:mysql://localhost:3306/spring?characterEncoding=utf8&useSSL=false");
+                                dataSource.setUsername("root");
+                                dataSource.setPassword("root");
+                                return dataSource;
+                            }
+
+                            @Bean(name = "jdbcTemplate")
+                            public JdbcTemplate getJdbcTemplate(DataSource dataSource){
+                                JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                                jdbcTemplate.setDataSource(dataSource);
+                                return jdbcTemplate;
+                            }
+
+                            @Bean
+                            public DataSourceTransactionManager getDataSourceTransactionManager(DataSource dataSource){
+                                DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager();
+                                dataSourceTransactionManager.setDataSource(dataSource);
+                                return dataSourceTransactionManager;
+                            }
+            6/ 基于XML的声明式事务
+                修改Spring配置文件
+                    <aop:config>
+                        <!-- 配置事务通知和切入点表达式 -->
+                        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.atguigu.spring.tx.xml.service.impl.*.*(..))"></aop:advisor>
+                    </aop:config>
+                    <!-- tx:advice标签：配置事务通知 -->
+                    <!-- id属性：给事务通知标签设置唯一标识，便于引用 -->
+                    <!-- transaction-manager属性：关联事务管理器 -->
+                    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+                        <tx:attributes>
+                            <!-- tx:method标签：配置具体的事务方法 -->
+                            <!-- name属性：指定方法名，可以使用星号代表多个字符 -->
+                            <tx:method name="get*" read-only="true"/>
+                            <tx:method name="query*" read-only="true"/>
+                            <tx:method name="find*" read-only="true"/>
+
+                            <!-- read-only属性：设置只读属性 -->
+                            <!-- rollback-for属性：设置回滚的异常 -->
+                            <!-- no-rollback-for属性：设置不回滚的异常 -->
+                            <!-- isolation属性：设置事务的隔离级别 -->
+                            <!-- timeout属性：设置事务的超时属性 -->
+                            <!-- propagation属性：设置事务的传播行为 -->
+                            <tx:method name="save*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+                            <tx:method name="update*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+                            <tx:method name="delete*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+                        </tx:attributes>
+                    </tx:advice>
+10\ 资源操作resource
+11\ 国际化 i18n
+12\ 数据校验 Validation
+13\ 提前编译：AOT
+
+
+
+
+
+
+
+
+
+
+
+

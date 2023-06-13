@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd">
+
+    <bean id="user" class="com.atguigu.spring.bean.User" name="user2"></bean>
+
+    <bean id="book" class="com.atguigu.spring.bean.Book">
+        <property name="name" >
+            <value>java</value>
+        </property>
+        <property name="author" value="尚硅谷"></property>
+     <!--
+     <property name="others">
+            <null></null>
+        </property>
+        -->
+<!--        <property name="others" value="&lt;&gt;"/>-->
+        <property name="others">
+            <value><![CDATA[<>]]></value>
+        </property>
+    </bean>
+
+    <!--构造器注入-->
+  <!--  <bean id="book2" class="com.atguigu.spring.bean.Book">
+        <constructor-arg name="name" value="C++"></constructor-arg>
+        <constructor-arg name="author" value="清华大学"></constructor-arg>
+    </bean>-->
+
+
+    <!--测试外部bean注入-->
+    <bean id="dept" class="com.atguigu.spring.bean.Department">
+        <property name="deptName" value="财务部"></property>
+    </bean>
+    <bean id="emp" class="com.atguigu.spring.bean.Employee">
+        <property name="dept" ref="dept"></property>
+        <property name="id" value="10001"></property>
+        <property name="name" value="雷军"></property>
+    </bean>
+
+
+    <!--测试内部bean注入-->
+
+    <bean id="emp2" class="com.atguigu.spring.bean.Employee">
+        <property name="dept">
+            <bean id="dept2" class="com.atguigu.spring.bean.Department">
+                <property name="deptName" value="商务部"></property>
+            </bean>
+        </property>
+        <property name="id" value="10002"></property>
+        <property name="name" value="李斌"></property>
+    </bean>
+
+    <!--级联属性赋值-->
+    <bean id="emp3" class="com.atguigu.spring.bean.Employee">
+        <property name="dept" ref="dept"></property>
+
+        <property name="dept.deptName" value="科技部"></property>
+        <property name="id" value="10003"></property>
+        <property name="name" value="李想"></property>
+    </bean>
+
+    <!--数组属性赋值-->
+    <bean id="emp4" class="com.atguigu.spring.bean.Employee">
+        <property name="hobbies">
+            <array>
+                <value>读书</value>
+                <value>跑步</value>
+                <value>游泳</value>
+            </array>
+        </property>
+        <property name="id" value="10003"></property>
+        <property name="name" value="李想"></property>
+    </bean>
+    <!--集合属性赋值-->
+    <bean id="emp5" class="com.atguigu.spring.bean.Employee">
+        <property name="hobbies">
+            <array>
+                <value>读书</value>
+                <value>跑步</value>
+                <value>游泳</value>
+            </array>
+        </property>
+        <property name="employeeList">
+            <list>
+                <ref bean="emp2"></ref>
+                <ref bean="emp3"></ref>
+                <ref bean="emp4"></ref>
+            </list>
+
+        </property>
+        <property name="id" value="10003"></property>
+        <property name="name" value="李想"></property>
+    </bean>
+
+    <bean id="teacher" class="com.atguigu.spring.bean.Teacher">
+        <property name="tId" value="100"></property>
+        <property name="tName" value="刘老师"></property>
+    </bean>
+    <bean id="teacher2" class="com.atguigu.spring.bean.Teacher">
+        <property name="tId" value="101"></property>
+        <property name="tName" value="赵老师"></property>
+    </bean>
+    <bean id="emp6" class="com.atguigu.spring.bean.Employee">
+        <property name="id" value="000015"></property>
+        <property name="name" value="江小白"></property>
+        <property name="dept" ref="dept"></property>
+        <property name="hobbies">
+            <array>
+                <value>读书</value>
+                <value>跑步</value>
+                <value>游泳</value>
+            </array>
+        </property>
+        <property name="teacherMap">
+            <map>
+                <entry>
+                    <key>
+                        <value>J001</value>
+                    </key>
+                    <ref bean="teacher"></ref>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <util:list id="empList">
+        <ref bean="emp2"></ref>
+        <ref bean="emp5"></ref>
+        <ref bean="emp6"></ref>
+    </util:list>
+    <util:map id="teacherMap">
+        <entry>
+            <key>
+                <value>A0001</value>
+            </key>
+            <ref bean="teacher"></ref>
+        </entry>
+        <entry>
+            <key>
+                <value>A0002</value>
+            </key>
+            <ref bean="teacher2"></ref>
+        </entry>
+    </util:map>
+    <bean id="dept6" class="com.atguigu.spring.bean.Department">
+        <property name="deptName" value="发展部"></property>
+    </bean>
+</beans>

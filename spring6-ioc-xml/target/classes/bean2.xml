@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+    
+    <bean id="druidDataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="url"  value="${jdbc.url}"/>
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="username" value="${jdbc.user}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+    
+    
+    
+    
+    <bean id="student" class="com.atguigu.spring.bean.Student">
+        <property name="name" value="张三"></property>
+        <property name="age" value="12"></property>
+        <property name="id" value="10001"></property>
+        <property name="hobbes">
+            <array>
+                <value>篮球</value>
+                <value>唱歌</value>
+            </array>
+        </property>
+        <property name="teacherMap">
+            <map>
+                <entry>
+                    <key><value>T01</value></key>
+                    <ref bean="teacher"></ref>
+                </entry>
+            </map>
+        </property>
+    </bean>
+    <bean id="student2" class="com.atguigu.spring.bean.Student">
+        <property name="name" value="李四"></property>
+        <property name="age" value="13"></property>
+        <property name="id" value="10002"></property>
+        <property name="hobbes">
+            <array>
+                <value>跳舞</value>
+                <value>读书</value>
+            </array>
+        </property>
+        <property name="teacherMap">
+            <map>
+                <entry>
+                    <key><value>T01</value></key>
+                    <ref bean="teacher"></ref>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <util:list id="stuList">
+        <ref bean="student"></ref>
+        <ref bean="student2"></ref>
+    </util:list>
+    <util:map id="teacherMap">
+        <entry>
+            <key><value>TT01</value></key>
+            <ref bean="teacher"></ref>
+        </entry>
+        <entry>
+            <key><value>TT02</value></key>
+            <ref bean="teacher2"></ref>
+        </entry>
+    </util:map>
+
+    <bean id="teacher" class="com.atguigu.spring.bean.Teacher">
+        <property name="tId" value="T01"></property>
+        <property name="tName" value="张老师"></property>
+    </bean>
+    <bean id="teacher2" class="com.atguigu.spring.bean.Teacher">
+        <property name="tId" value="T02"></property>
+        <property name="tName" value="徐老师"></property>
+    </bean>
+    <bean id="clazz" class="com.atguigu.spring.bean.Clazz">
+        <property name="clazzId" value="001"></property>
+        <property name="clazzName" value="创业班级"></property>
+        <property name="studentList" ref="stuList"></property>
+    </bean>
+    <bean id="stu3" class="com.atguigu.spring.bean.Student" p:id="100099" p:age="22" p:name="小白鼠" p:teacherMap-ref="teacherMap"></bean>
+</beans>
